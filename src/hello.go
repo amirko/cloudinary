@@ -22,7 +22,6 @@ type ThumbnailError struct{
 func main() {
 	fmt.Printf("Welcome to thumbnail service!\n")
 	router := mux.NewRouter().StrictSlash(true)
-	router.HandleFunc("/", Index)
 	router.HandleFunc("/thumbnail", thumbnail)
 	log.Fatal(http.ListenAndServe(":8080", router))
 }
@@ -87,6 +86,9 @@ func writeImage(w http.ResponseWriter, img *image.Image) {
 }
 
 func resizeImage(x uint64, y uint64, img image.Image) (image.Image) {
+
+	// I wanted to use imagick library which would have saved me a lot of work, but I couldn't install ImageMagick
+
 	requiredAspectRatio := float64(y)/float64(x)
 	imgX := uint64(img.Bounds().Max.X)
 	imgY := uint64(img.Bounds().Max.Y)
@@ -96,11 +98,12 @@ func resizeImage(x uint64, y uint64, img image.Image) (image.Image) {
 	} else if requiredAspectRatio == imageAspectRatio && imgX < x {
 		return resize.Resize(uint(x), uint(y), img, resize.Lanczos3)
 	}
+	// in case of larger image with same aspect ratio: create a black rectangle of size x,y and place the image in the center
+
+	// if requiredAspectRatio > imageAspectRatio create a resized image with width x<=imgX, otherwise with height y<=imgY,
+	// create a black  rectangle of size x,y and place the image in the center
 	return img
 }
 
-func Index(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintln(w, "Welcome!")
-}
 
 
