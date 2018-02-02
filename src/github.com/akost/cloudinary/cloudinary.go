@@ -13,6 +13,7 @@ import (
 	"strconv"
 	"image/color"
 	"image/draw"
+	"os"
 )
 type ThumbnailError struct{
 	StatusOK bool
@@ -23,8 +24,19 @@ func main() {
 	fmt.Printf("================ Thumbnail service is up and running!\n")
 	router := mux.NewRouter().StrictSlash(true)
 	router.HandleFunc("/thumbnail", thumbnail)
-	log.Fatal(http.ListenAndServe(":8080", router))
+	log.Fatal(http.ListenAndServe(getPort(), router))
 }
+func getPort() string {
+	var port = os.Getenv("PORT")
+	// Set a default port if there is nothing in the environment
+	if port == "" {
+		port = "8080"
+		log.Print("INFO: No PORT environment variable detected, defaulting to " + port)
+	}
+	return ":" + port
+}
+
+
 
 func thumbnail(w http.ResponseWriter, r *http.Request) {
 	params := r.URL.Query()
