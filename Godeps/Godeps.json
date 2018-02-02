@@ -1,15 +1,9 @@
 {
-  "ImportPath": "github.com/heroku/go-getting-started",
-  "GoVersion": "go1.9",
-  "Packages": [
-    "./..."
-  ],
-  "Deps": [
-    {
-      "ImportPath": "github.com/nfnt/resize"
-    },
-    {
-      "ImportPath": "github.com/gorilla/mux"
-    }
-  ]
+	"ImportPath": ".",
+	"GoVersion": "go1.9",
+	"GodepVersion": "v80",
+	"Packages": [
+		"./..."
+	],
+	"Deps": []
 }
