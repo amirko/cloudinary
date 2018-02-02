@@ -1,9 +1,19 @@
 {
-	"ImportPath": ".",
+	"ImportPath": "github.com/akost/cloudinary",
 	"GoVersion": "go1.9",
 	"GodepVersion": "v80",
 	"Packages": [
 		"./..."
 	],
-	"Deps": []
+	"Deps": [
+		{
+			"ImportPath": "github.com/gorilla/mux",
+			"Comment": "v1.6.1-10-gc0091a0",
+			"Rev": "c0091a029979286890368b4c7b301261e448e242"
+		},
+		{
+			"ImportPath": "github.com/nfnt/resize",
+			"Rev": "891127d8d1b52734debe1b3c3d7e747502b6c366"
+		}
+	]
 }
