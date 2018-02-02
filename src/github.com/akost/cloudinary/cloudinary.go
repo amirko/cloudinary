@@ -33,6 +33,7 @@ func getPort() string {
 		port = "8080"
 		log.Print("INFO: No PORT environment variable detected, defaulting to " + port)
 	}
+	log.Print("PORT = " + port)
 	return ":" + port
 }
 
