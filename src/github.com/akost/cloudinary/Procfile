@@ -1,1 +1,1 @@
-web: thumbnail
+web: cloudinary
