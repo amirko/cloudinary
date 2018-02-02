@@ -40,6 +40,7 @@ func getPort() string {
 
 
 func thumbnail(w http.ResponseWriter, r *http.Request) {
+	log.Print("Received request: ", r.URL)
 	params := r.URL.Query()
 	url := params.Get("url")
 	x, err1 := strconv.ParseUint(params.Get("x"), 10, 32)
