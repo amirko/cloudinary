@@ -1,11 +1,10 @@
 # cloudinary
 
-to run:
-
-cd <project>/src
-
-go get github.com/nfnt/resize
-
-go get github.com/gorilla/mux
-
+to run:<br><br>
+<code>
+cd \<project\>/src<br>
+go get github.com/nfnt/resize<br>
+go get github.com/gorilla/mux<br>
 go run hello.go
+</code>
+

@@ -3,10 +3,7 @@ package main
 import (
 	"fmt"
 	"bytes"
-//	"encoding/base64"
 	"image"
-	//"image/color"
-	//"image/draw"
 	"github.com/nfnt/resize"
 	"image/jpeg"
 	"net/http"
@@ -14,13 +11,16 @@ import (
 	"github.com/gorilla/mux"
 	log "log"
 	"strconv"
+	"image/color"
+	"image/draw"
 )
 type ThumbnailError struct{
+	StatusOK bool
 	Reason string
 }
 
 func main() {
-	fmt.Printf("Welcome to thumbnail service!\n")
+	fmt.Printf("================ Thumbnail service is up and running!\n")
 	router := mux.NewRouter().StrictSlash(true)
 	router.HandleFunc("/thumbnail", thumbnail)
 	log.Fatal(http.ListenAndServe(":8080", router))
@@ -30,33 +30,38 @@ func thumbnail(w http.ResponseWriter, r *http.Request) {
 	params := r.URL.Query()
 	url := params.Get("url")
 	x, err1 := strconv.ParseUint(params.Get("x"), 10, 32)
+	if err1 != nil {
+		log.Print("Couldn't parse x param ", err1)
+		writeError(w, "Couldn't parse x param", http.StatusBadRequest)
+		return
+	}
 	y, err2 := strconv.ParseUint(params.Get("y"), 10, 32)
-	if err1 != nil || err2 != nil {
-		writeError(w, "Cant parse params", http.StatusBadRequest)
+	if err2 != nil {
+		log.Print("Couldn't parse y param ", err2)
+		writeError(w, "Couldn't parse y param", http.StatusBadRequest)
 		return
 	}
 	response, e := http.Get(url)
 	if e != nil {
-		log.Print("Could not read image")
+		log.Print("Could not read image ", e)
 		writeError(w, "Not Found", http.StatusNotFound)
 		return
 	}
 	im, _, e := image.Decode(response.Body)
 	if e != nil {
-		log.Print("Could not decode image")
+		log.Print("Could not decode image ", e)
 		writeError(w, "Error decoding image", http.StatusInternalServerError)
 		return
 	}
-	im = resizeImage(x, y, im)
+	im = resizeImage(int(x), int(y), im)
 	writeImage(w, &im)
 	defer response.Body.Close()
-
-//	writeImage(w, )
 }
 
 func writeError(w http.ResponseWriter, reason string, httpCode int) {
 	w.WriteHeader(httpCode)
-	tmbError := ThumbnailError{reason}
+	w.Header().Set("Content-Type", "application/json")
+	tmbError := ThumbnailError{false, reason}
 	js, err := json.Marshal(tmbError)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -69,7 +74,6 @@ func writeError(w http.ResponseWriter, reason string, httpCode int) {
 
 // writeImage encodes an image 'img' in jpeg format and writes it into ResponseWriter.
 func writeImage(w http.ResponseWriter, img *image.Image) {
-
 	buffer := new(bytes.Buffer)
 	if err := jpeg.Encode(buffer, *img, nil); err != nil {
 		log.Println("Unable to encode image.")
@@ -85,25 +89,45 @@ func writeImage(w http.ResponseWriter, img *image.Image) {
 	}
 }
 
-func resizeImage(x uint64, y uint64, img image.Image) (image.Image) {
-
-	// I wanted to use imagick library which would have saved me a lot of work, but I couldn't install ImageMagick
-
+func resizeImage(x int, y int, img image.Image) (image.Image) {
 	requiredAspectRatio := float64(y)/float64(x)
-	imgX := uint64(img.Bounds().Max.X)
-	imgY := uint64(img.Bounds().Max.Y)
+	imgX := img.Bounds().Dx()
+	imgY := img.Bounds().Dy()
 	imageAspectRatio := float64(imgY)/float64(imgX)
-	if requiredAspectRatio == imageAspectRatio && imgX == x {
+	if requiredAspectRatio == imageAspectRatio && x == imgX {
 		return img
-	} else if requiredAspectRatio == imageAspectRatio && imgX < x {
+	} else if requiredAspectRatio == imageAspectRatio && x < imgX{
 		return resize.Resize(uint(x), uint(y), img, resize.Lanczos3)
+	} else  {
+		if x >= imgX && y >= imgY {
+			return composeImage(x, y, img)
+		}
+		ratioX := float64(x)/float64(imgX)
+		ratioY := float64(y)/float64(imgY)
+		if(ratioX < ratioY) { // scale by x
+			img = resize.Resize(uint(x), uint(float64(x) * imageAspectRatio), img, resize.Lanczos3)
+			return composeImage(x, y, img)
+		}
+		// scale by y
+		newX := uint(float64(y) / imageAspectRatio)
+		img = resize.Resize(newX, uint(y), img, resize.Lanczos3)
+		return composeImage(x, y, img)
 	}
-	// in case of larger image with same aspect ratio: create a black rectangle of size x,y and place the image in the center
-
-	// if requiredAspectRatio > imageAspectRatio create a resized image with width x<=imgX, otherwise with height y<=imgY,
-	// create a black  rectangle of size x,y and place the image in the center
 	return img
 }
 
+// compose the image on a larger black rectangle
+func composeImage(x int, y int, img image.Image) image.Image {
+	rectangle := image.NewRGBA(image.Rect(0, 0, x, y))
+	black := color.RGBA{0, 0, 0, 0}
+	draw.Draw(rectangle, rectangle.Bounds(), &image.Uniform{black}, image.ZP, draw.Src)
+	xPad := (x - img.Bounds().Dx()) / 2
+	yPad := (y - img.Bounds().Dy()) / 2
+	pt := image.Point{xPad, yPad}
+	imgRect := image.Rectangle{pt, pt.Add(img.Bounds().Size())}
+	img.Bounds().At(xPad, yPad)
+	draw.Draw(rectangle, imgRect, img, image.ZP, draw.Src)
+	return rectangle
+}
 
 
