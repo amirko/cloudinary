@@ -1,1 +1,1 @@
-web: cloudinary -p PORT=8080
+web: cloudinary

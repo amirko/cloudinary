@@ -3,8 +3,5 @@
 to run:<br><br>
 <code>
 cd \<project\>/src<br>
-go get github.com/nfnt/resize<br>
-go get github.com/gorilla/mux<br>
-go run thumbnail.go
-</code>
+go run github.com/akost/cloudinary/cloudinary.go</code>
 
