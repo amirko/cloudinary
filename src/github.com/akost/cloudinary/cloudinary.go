@@ -56,6 +56,7 @@ func thumbnail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	response, e := http.Get(url)
+	defer response.Body.Close()
 	if e != nil {
 		log.Print("Could not read image ", e)
 		writeError(w, "Not Found", http.StatusNotFound)
@@ -69,7 +70,6 @@ func thumbnail(w http.ResponseWriter, r *http.Request) {
 	}
 	im = resizeImage(int(x), int(y), im)
 	writeImage(w, &im)
-	defer response.Body.Close()
 }
 
 func writeError(w http.ResponseWriter, reason string, httpCode int) {
